@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "688320597897",
+    "firebase_url": "https://stagehoot-golf.firebaseio.com",
+    "project_id": "stagehoot-golf",
+    "storage_bucket": "stagehoot-golf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:688320597897:android:6c50ddde79d13472",
+        "android_client_info": {
+          "package_name": "mannfeldt.golf"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "688320597897-8s2237najvil8cue4b59htajp70r0nii.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6Zra2lLqTQRLH_M7jl138iJXfaWyN_To"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "688320597897-8s2237najvil8cue4b59htajp70r0nii.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
