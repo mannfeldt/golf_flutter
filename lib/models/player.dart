@@ -16,8 +16,6 @@ class Player {
     this.state = "STILL";
     this.scored = false;
     this.color = null;
-    
-
   }
   Player.fromJson(Map json) {
     this.key = json["key"];
@@ -30,4 +28,17 @@ class Player {
     //här behöver jag skapa upp alla atribut.
     //får även skapa under objekt så som player, minigame och koppla dem till Golfgame?
   }
+
+  Map<String, dynamic> toJson() => {
+        'key': this.key,
+        'name': this.name,
+        'color': this.color,
+        'score': this.score,
+        'scored': this.scored,
+        'state': this.state,
+        'distance': this.distance
+      };
+  //här behöver jag skapa upp alla atribut.
+  //får även skapa under objekt så som player, minigame och koppla dem till Golfgame?
+
 }

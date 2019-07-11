@@ -7,24 +7,27 @@ class Connect extends StatelessWidget {
   Widget build(BuildContext context) {
     TextEditingController controller = TextEditingController();
     final gameState = Provider.of<GameState>(context);
-    
 
     return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            TextField(
-              controller: controller,
-            ),
-            RaisedButton(
-              onPressed: () {
-                print("text:" +controller.text);
-                gameState.joinGame(controller.text);
-              },
-              child: Text("connect: " + gameState.getGameId()),
-            ),
-          ],
-        ),
-      );
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Padding(
+              padding: const EdgeInsets.all(30.0),
+              child: TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                    border: InputBorder.none, labelText: 'Game ID'),
+              )),
+          RaisedButton(
+            onPressed: () {
+              print("text:" + controller.text);
+              gameState.joinGame(controller.text);
+            },
+            child: Text("Connect"),
+          ),
+        ],
+      ),
+    );
   }
 }

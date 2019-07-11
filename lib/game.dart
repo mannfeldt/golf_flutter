@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:async/async.dart';
+import 'package:testgolf/models/club.dart';
 import 'package:testgolf/models/golfgame.dart';
 import 'package:testgolf/models/player.dart';
 import 'package:testgolf/models/swing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:testgolf/util.dart';
+
 //vad la jag till sen det börja crasha? golfcontroller, lobby, getPlayerFromGame, shared_preferences,          subscription.cancel();
 //finns många vägar att testa. börja med att få till enklast glada vägen. sen alla snesteg och reconnects osv.
 class GameState with ChangeNotifier {
@@ -14,8 +17,10 @@ class GameState with ChangeNotifier {
   String _playerKey;
   Golfgame _golfgame;
   Player _player;
-  Swing _swing;
+  int _strokes = 0;
+  int _clubIndex = 0;
   Stream<Event> _gameListener;
+  StreamSubscription _subscription;
   GameState(this._gameId, this._golfgame);
 
   void setGameId(String gameId) {
@@ -23,11 +28,22 @@ class GameState with ChangeNotifier {
     notifyListeners();
   }
 
+  getClubIndex() => _clubIndex;
+
   getGameId() => _gameId;
 
   getGame() => _golfgame;
 
   getPlayer() => _player;
+
+  getStrokes() => _strokes;
+
+  void setClubIndex(int clubindex) {
+    _clubIndex = clubindex;
+    notifyListeners();
+  }
+
+  //hit function here? det är om det är viktigt
 
   void joinGame(gameId) {
     final databaseReference = FirebaseDatabase.instance.reference();
@@ -70,23 +86,20 @@ class GameState with ChangeNotifier {
     });
   }
 
-  void getPlayerFromGame(String gameKey, bool initgame) {
+  void getPlayerFromGame(Golfgame golfgame, bool initgame) {
     final databaseReference = FirebaseDatabase.instance.reference();
-
-    databaseReference
-        .child("games/" + gameKey + "/players/" + _playerKey)
-        .once()
-        .then((DataSnapshot snapshot) {
+    String playerPath = "games/" + golfgame.key + "/players/" + _playerKey;
+    databaseReference.child(playerPath).once().then((DataSnapshot snapshot) {
       var player = snapshot.value;
       Map<dynamic, dynamic> playerValues = snapshot.value;
-      playerValues.forEach((key, playerValues) {
-        print(playerValues["name"]);
-        player = player[key];
-      });
+      // playerValues.forEach((key, playerValues) {
+      //   print(playerValues["name"]);
+      //   player = player[key];
+      // });
       if (player != null) {
-        _player = Player.fromJson(snapshot.value);
-        if(initgame){
-          initGameListiner(_golfgame);
+        _player = Player.fromJson(player);
+        if (initgame) {
+          initGameListiner(golfgame);
         }
         notifyListeners();
       }
@@ -94,6 +107,7 @@ class GameState with ChangeNotifier {
   }
 
   void initGameListiner(golfgame) {
+    //vid reconnect får jag error för att golfgame är null??
     final databaseReference = FirebaseDatabase.instance.reference();
     _gameListener = databaseReference
         .child('games')
@@ -104,19 +118,19 @@ class GameState with ChangeNotifier {
     _gameId = golfgame.id;
     _golfgame = golfgame;
     _saveToPrefs("gameid", golfgame.id);
-    StreamSubscription subscription;
-    subscription = _gameListener.listen((data) {
+    if (_subscription != null) {
+      _subscription.cancel();
+    }
+    _subscription = _gameListener.listen((data) {
       Map<dynamic, dynamic> gameValues = data.snapshot.value;
-      var game;
-      if (gameValues != null) {
-        gameValues.forEach((key, gameValues) {
-          print(gameValues["name"]);
-          game = gameValues[key];
-        });
-        //game är lika med null? sätts inte rätt?
+      var game = data.snapshot.value;
+      gameValues.forEach((key, gameValues) {
+        game = gameValues;
+      });
+      if (game != null) {
         _golfgame = new Golfgame.fromJson(game);
         if (_golfgame.phase == "final_result") {
-          //subscription.cancel();
+          _subscription.cancel();
           //this.cancel();
         }
       } else {
@@ -130,16 +144,20 @@ class GameState with ChangeNotifier {
     //dispose// _gameListener.cancel();
   }
 
+  void nextLevel() {
+    _strokes = 0;
+    notifyListeners();
+  }
+
   void createPlayer(String name) {
     final databaseReference = FirebaseDatabase.instance.reference();
     Player player = new Player(name);
-
     var playerRef =
-        databaseReference.child('/games/' + _golfgame.key + '/players').push();
+        databaseReference.child('games/' + _golfgame.key + '/players').push();
     player.key = playerRef.key;
     _playerKey = player.key;
-    //playerkey måste sparas i minnet även vid restart av appen
-    playerRef.set(player);
+    var jsonPlayer = player.toJson();
+    playerRef.set(jsonPlayer);
     _player = player;
 
     _saveToPrefs("playerkey", _playerKey);
@@ -148,32 +166,52 @@ class GameState with ChangeNotifier {
 
   void _saveToPrefs(String key, String value) async {
     //https://pusher.com/tutorials/local-data-flutter
-    // final prefs = await SharedPreferences.getInstance();
-    // prefs.setString(key, value);
-    // print('saved $value');
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString(key, value);
+    print('saved $value');
   }
 
   void _readPlayerKeyFromPrefs(Golfgame golfgame, bool initGame) async {
-    // final prefs = await SharedPreferences.getInstance();
-    // final value = prefs.getString("playerkey") ?? null;
-    // _playerKey = value;
-    // if (_playerKey != null) {
-    //   getPlayerFromGame(golfgame.key, initGame);
-    // }else{
-    //   print("game is in progress");
-    // }
-    // print('read: $value');
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString("playerkey") ?? null;
+    _playerKey = value;
+    if (_playerKey != null) {
+      getPlayerFromGame(golfgame, initGame);
+    } else {
+      print("game is in progress");
+    }
+    print('read: $value');
   }
 
-  void swing(Swing swing) {
-    _swing.x = swing.x;
-    _swing.y = swing.y;
-    _swing.strokes += 1;
-    //swing är ett specielt objekt se util
+  void swing(int power) {
+    if (_player.state != 'STILL') {
+      print('ball is not still');
+      return;
+    }
+    if (_golfgame.phase != 'gameplay') {
+      print('game is not playing');
+      return;
+    }
+
+    // if (util.isInvalidSwing(swingData)) {
+    //   alert('invalid swing');
+    //   return;
+    // }
+
+    // ska bara kunna används wood på första slaget? ge det lite extra power
+    var club = Utility.CLUBS[_clubIndex];
+    //club-klassen används inte?
+    Swing swing = Utility.getSwing(club, power);
+    _strokes += 1;
+    swing.strokes = _strokes;
+
+//    window.addEventListener('devicemotion', (e) => {. behöver vi swindata?
+
+    //  "/swing" hur skapas den "mappen?"
     final databaseReference = FirebaseDatabase.instance.reference();
     databaseReference
-        .child('/games/' + _golfgame.key + '/players/' + _player.key + '/swing')
-        .set(swing);
+        .child('games/' + _golfgame.key + '/players/' + _player.key + '/swing')
+        .set(swing.toJson());
 
     notifyListeners();
   }

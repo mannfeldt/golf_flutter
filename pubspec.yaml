@@ -24,7 +24,7 @@ dependencies:
   sensors: ^0.4.0+1
   async: ^2.1.0
   provider: ^3.0.0+1
-  shared_preferences: 0.4.0
+  shared_preferences: ^0.5.3+2
   # verkar vara ett känt fel som kommit nyligen? https://stackoverflow.com/questions/56884120/application-crash-on-startup-when-i-add-shared-preference-plugin-in-flutter?newreg=c5cafa0731fe454b834a9fb59cdf5ae7
 #använd någon annan teknik för att spara till minne. eller använd en annan plugin för shareed preferences, se screenshot på mobilen
 
@@ -41,6 +41,7 @@ dev_dependencies:
 # following page: https://www.dartlang.org/tools/pub/pubspec
 
 # The following section is specific to Flutter.
+
 flutter:
 
   # The following line ensures that the Material Icons font is
@@ -48,6 +49,10 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  fonts:
+  - family:  CustomGolf
+    fonts:
+      - asset: fonts/CustomGolf.ttf
   # To add assets to your application, add an assets section, like this:
   # assets:
   #  - images/a_dot_burr.jpeg

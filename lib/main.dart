@@ -6,7 +6,6 @@ import 'package:testgolf/golfController.dart';
 import 'package:testgolf/models/golfgame.dart';
 import 'package:testgolf/lobby.dart';
 
-
 //import 'package:firebase_database/firebase_database.dart';
 
 void main() => runApp(MyApp());
@@ -20,14 +19,15 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: ChangeNotifierProvider<GameState>(
-          builder: (_) => GameState("test123",null),
-          child: HomePage(),
-        ),
+        builder: (_) => GameState("test123", null),
+        child: HomePage(),
+      ),
     );
   }
 }
 
 class HomePage extends StatelessWidget {
+  String _previousPhase;
   //skapa en koppling till game.dart som state?
   //använd funktionerna i game.fetchgame/joingame till en knapp här
   //sen ska ju denna widget bara visas om golfgame är null.
@@ -39,16 +39,24 @@ class HomePage extends StatelessWidget {
     Golfgame golfgame = gameState.getGame();
     Widget child;
     if (golfgame == null) {
+      //phase == level_completed?
       child = Connect();
-    } else if(golfgame.phase == "connection"){
+    } else if (golfgame.phase == "connection") {
       child = Lobby();
-    }else if(golfgame.phase == "gameplay"){
+    } else if (golfgame.phase == "starting") {
+      child = Center(child: Text("Starting.."));
+    } else if (golfgame.phase == "gameplay" ||
+        golfgame.phase == "level_completed") {
+      if (_previousPhase == "level_completed" && golfgame.phase == "gameplay") {
+        gameState.nextLevel();
+      }
       child = GolfController();
-    }else{
+    } else {
       child = Text("ERROR GAME PHASE WRONG?");
     }
-    //detta funkar inte. hur får jag provider i flera heirarkeier? hur kan jag använda state till att välja vilken widget som ska
+    _previousPhase = golfgame != null ? golfgame.phase : null;
 
+    //detta funkar inte. hur får jag provider i flera heirarkeier? hur kan jag använda state till att välja vilken widget som ska
 
     return Scaffold(
       appBar: AppBar(
