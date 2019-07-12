@@ -20,10 +20,19 @@ class Utility {
 
   static bool isValidSwing(List<AccelerometerEvent> swingPoints) {
     print("len: " + swingPoints.length.toString());
-    if (swingPoints.length < 10) {
-      return false;
-    }
+    // if (swingPoints.length < 3000) {
+    //   return false;
+    // }
     return true;
+  }
+
+  static String getScoreName(int strokes, int par) {
+    if (strokes == 1) return 'Hole in one!';
+    int score = strokes - par;
+    var term = SCORE_TERMS.singleWhere((term) => term["score"] == score,
+        orElse: () => null);
+    if (term != null) return term["name"];
+    return score.toString() + " over par";
   }
 
   static final clubIcons = {
@@ -128,6 +137,40 @@ class Utility {
       'loft': 1,
       'powerFactor': 1.6,
       'max': 400,
+    },
+  ];
+  static final SCORE_TERMS = [
+    {
+      'name': 'Albatross',
+      'score': -3,
+    },
+    {
+      'name': 'Eagle',
+      'score': -2,
+    },
+    {
+      'name': 'Birdie',
+      'score': -1,
+    },
+    {
+      'name': 'Par',
+      'score': 0,
+    },
+    {
+      'name': 'Bogey',
+      'score': 1,
+    },
+    {
+      'name': 'Double bogey',
+      'score': 2,
+    },
+    {
+      'name': 'Triple bogey',
+      'score': 3,
+    },
+    {
+      'name': 'Quadruple bogey',
+      'score': 4,
     },
   ];
 }

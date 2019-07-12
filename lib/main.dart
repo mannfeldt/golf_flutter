@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:testgolf/golfController.dart';
 import 'package:testgolf/models/golfgame.dart';
 import 'package:testgolf/lobby.dart';
+import 'package:flutter/services.dart';
 
 //import 'package:firebase_database/firebase_database.dart';
 
@@ -13,6 +14,9 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(

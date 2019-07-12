@@ -20,7 +20,10 @@ class GameState with ChangeNotifier {
   int _strokes = 0;
   int _clubIndex = 0;
   Stream<Event> _gameListener;
-  StreamSubscription _subscription;
+  Stream<Event> _playerListener;
+  StreamSubscription _gameSubscription;
+  StreamSubscription _playerSubscription;
+
   GameState(this._gameId, this._golfgame);
 
   void setGameId(String gameId) {
@@ -67,11 +70,11 @@ class GameState with ChangeNotifier {
           if (_player == null) {
             _readPlayerKeyFromPrefs(golfgame, false);
           }
-          initGameListiner(golfgame);
+          initGameListener(golfgame);
         } else if (golfgame.phase == 'setup') {
           print("game has not started");
         } else if (_player != null) {
-          initGameListiner(golfgame);
+          initGameListener(golfgame);
           //reconnect to game med player sparad
           //behöver säkerställa att det är en player som finns på gamet kanske?
         } else {
@@ -99,14 +102,15 @@ class GameState with ChangeNotifier {
       if (player != null) {
         _player = Player.fromJson(player);
         if (initgame) {
-          initGameListiner(golfgame);
+          initGameListener(golfgame);
         }
+        _initPlayerListener(golfgame);
         notifyListeners();
       }
     });
   }
 
-  void initGameListiner(golfgame) {
+  void initGameListener(golfgame) {
     //vid reconnect får jag error för att golfgame är null??
     final databaseReference = FirebaseDatabase.instance.reference();
     _gameListener = databaseReference
@@ -118,10 +122,10 @@ class GameState with ChangeNotifier {
     _gameId = golfgame.id;
     _golfgame = golfgame;
     _saveToPrefs("gameid", golfgame.id);
-    if (_subscription != null) {
-      _subscription.cancel();
+    if (_gameSubscription != null) {
+      _gameSubscription.cancel();
     }
-    _subscription = _gameListener.listen((data) {
+    _gameSubscription = _gameListener.listen((data) {
       Map<dynamic, dynamic> gameValues = data.snapshot.value;
       var game = data.snapshot.value;
       gameValues.forEach((key, gameValues) {
@@ -130,7 +134,7 @@ class GameState with ChangeNotifier {
       if (game != null) {
         _golfgame = new Golfgame.fromJson(game);
         if (_golfgame.phase == "final_result") {
-          _subscription.cancel();
+          _gameSubscription.cancel();
           //this.cancel();
         }
       } else {
@@ -146,7 +150,7 @@ class GameState with ChangeNotifier {
 
   void nextLevel() {
     _strokes = 0;
-    notifyListeners();
+    //notifyListeners();
   }
 
   void createPlayer(String name) {
@@ -161,6 +165,7 @@ class GameState with ChangeNotifier {
     _player = player;
 
     _saveToPrefs("playerkey", _playerKey);
+    _initPlayerListener(_golfgame);
     notifyListeners();
   }
 
@@ -183,7 +188,33 @@ class GameState with ChangeNotifier {
     print('read: $value');
   }
 
-  void swing(int power) {
+  void _initPlayerListener(Golfgame golfgame) {
+    final databaseReference = FirebaseDatabase.instance.reference();
+    String playerPath = "games/" + golfgame.key + "/players/" + _playerKey;
+    _playerListener = databaseReference.child(playerPath).onValue;
+    if (_playerSubscription != null) {
+      _playerSubscription.cancel();
+    }
+    _playerSubscription = _playerListener.listen((data) {
+      Map<dynamic, dynamic> playerValues = data.snapshot.value;
+      var player = data.snapshot.value;
+      // playerValues.forEach((key, playerValues) {
+      //   player = playerValues;
+      // });
+      if (player != null) {
+        _player = new Player.fromJson(player);
+        if (_golfgame.phase == "final_result") {
+          _playerSubscription.cancel();
+          //this.cancel();
+        }
+      } else {
+        _golfgame = null;
+      }
+      notifyListeners();
+    });
+  }
+
+  void swing(double power) {
     if (_player.state != 'STILL') {
       print('ball is not still');
       return;
@@ -204,7 +235,7 @@ class GameState with ChangeNotifier {
     Swing swing = Utility.getSwing(club, power);
     _strokes += 1;
     swing.strokes = _strokes;
-
+    print(swing.x.toString() + "  " + swing.y.toString());
 //    window.addEventListener('devicemotion', (e) => {. behöver vi swindata?
 
     //  "/swing" hur skapas den "mappen?"

@@ -2,16 +2,17 @@ class Player {
   String key;
   String name;
   String color;
-  int score;
+  String score;
   bool scored;
   String state;
   int distance;
+  int scoreTime;
   //int strokes;
 
   Player(String name) {
     this.key = null;
     this.name = name;
-    this.score = 0;
+    this.score = "0";
     this.distance = 0;
     this.state = "STILL";
     this.scored = false;
@@ -25,6 +26,7 @@ class Player {
     this.scored = json["scored"];
     this.state = json["state"];
     this.distance = json["distance"];
+    this.scoreTime = json["scoreTime"];
     //här behöver jag skapa upp alla atribut.
     //får även skapa under objekt så som player, minigame och koppla dem till Golfgame?
   }

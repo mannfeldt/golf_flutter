@@ -9,34 +9,50 @@ import 'dart:math';
 
 import 'package:testgolf/util.dart';
 
-class GolfController extends StatelessWidget {
+class GolfController extends StatefulWidget {
+  GolfController({Key key}) : super(key: key);
+
+  @override
+  _GolfController createState() => _GolfController();
+}
+
+class _GolfController extends State<GolfController> {
+  double _highestAcceleration = 0;
+  bool _swinging = false;
+  List<AccelerometerEvent> _swingPoints = [];
+
   @override
   Widget build(BuildContext context) {
     TextEditingController controller = TextEditingController();
     final gameState = Provider.of<GameState>(context);
+
     //här ska vi ha två olika widgetar. en som är en ruta för att välja namn och som då skapar en player och kallar på gamestate.createPlayer()
     //en annan widget som visar lobbyn / bara en text om att man väntar i lobbyn
 
     //vilken av de två widgetarna som ska visas beror på om gamestate.getPlayer är null eller inte.
     //createplayer(playernamecontroller.text);
 
-
 //kanske får skapa ett localState här ändå? för de som andra widgets inte behöver veta om. power, club etc det omrä nedan här
-    bool _isSwinging = false;
-    int _highestAcceleration = 0;
-    List<AccelerometerEvent> _swingPoints = [];
     int strokes = gameState.getStrokes();
     int clubIndex = gameState.getClubIndex();
     //se kommentar ovan. har jag dem här så skrivs de över hela tiden? och blir konstigt inom eventlyssnaren?
     //eller får jag förväntat beteende?
 
     Player player = gameState.getPlayer();
+
     Golfgame game = gameState.getGame();
+    String scoreText = "You did not score";
+    if (player.state == "SCORED") {
+      scoreText = Utility.getScoreName(strokes, game.par);
+    }
 
     accelerometerEvents.listen((AccelerometerEvent event) {
-      if (_isSwinging) {
+      if (_swinging) {
         double x = event.x, y = event.y, z = event.z;
-        _swingPoints.add(event);
+
+        setState(() {
+          _swingPoints.add(event);
+        });
         // this.drawSwing([{ x: Math.round(x * 2), y: Math.round(y * 2), z: Math.round(z * 2) }]);
 
         // hur är detta legit? både x och z kan ju vara minusvärden? jag borde lägga om dem till positiva?
@@ -47,13 +63,14 @@ class GolfController extends StatelessWidget {
         double xpower = x.abs();
         double zpower = z.abs();
 
-        int power = (xpower + zpower).floor();
+        double power = xpower + zpower;
         // const power2 = Math.floor(Math.abs(y) + Math.abs(z));
         // const power3 = Math.floor(Math.abs(x) + Math.abs(y));
-
         // && util.validateSwingMovement(event.acceleration, clubIndex)
         if (power > _highestAcceleration) {
-          _highestAcceleration = power;
+          setState(() {
+            _highestAcceleration = power;
+          });
           print("power" + power.toString());
         }
       }
@@ -70,7 +87,7 @@ class GolfController extends StatelessWidget {
     } else if (progress > 0.5) {
       progressColor = Colors.amber;
     }
-
+//kan dela upp alla delar i flera egna widgets...
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -88,19 +105,65 @@ class GolfController extends StatelessWidget {
                     valueColor:
                         new AlwaysStoppedAnimation<Color>(progressColor),
                   )),
-              Text((_highestAcceleration / 2).toString() + " m/s"),
+              Text((_highestAcceleration / 2).toStringAsFixed(1) + " m/s"),
             ],
           )),
-          Padding(
-              padding: const EdgeInsets.all(30.0),
-              child: Text("Stroke " + strokes.toString())),
+          game.phase == "gameplay"
+              ? Container(
+                  child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Padding(
+                        padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+                        child: Text("Stroke " + strokes.toString())),
+                    FloatingActionButton(
+                      backgroundColor: Color(int.parse("0xFF" +
+                          (player.color != null
+                              ? player.color.substring(1)
+                              : "ffffff"))),
+                      onPressed: () => {},
+                    ),
+                    Padding(
+                        padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
+                        child: Text(player.distance.toString() + " yards")),
+                  ],
+                ))
+              : Container(
+                  child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Padding(
+                        padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+                        child: Text(
+                            player.scoreTime != null && player.state == "SCORED"
+                                ? player.scoreTime.toString() + " sec"
+                                : " ")),
+                    FloatingActionButton(
+                      backgroundColor: Color(int.parse("0xFF" +
+                          (player.color != null
+                              ? player.color.substring(1)
+                              : "ffffff"))),
+                      onPressed: () => {},
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
+                      child: Text(scoreText),
+                    )
+                  ],
+                )),
           new Listener(
               onPointerDown: (PointerDownEvent event) {
-                _isSwinging = true;
+                setState(() {
+                  _highestAcceleration = 0.0;
+                  _swingPoints = [];
+                  _swinging = true;
+                });
                 print("down");
               },
               onPointerUp: (PointerUpEvent event) {
-                _isSwinging = false;
+                setState(() {
+                  _swinging = false;
+                });
                 if (Utility.isValidSwing(_swingPoints)) {
                   gameState.swing(_highestAcceleration);
                 } else {
@@ -109,7 +172,7 @@ class GolfController extends StatelessWidget {
               },
               child: IconButton(
                 icon: Icon(Icons.fingerprint,
-                    color: player.state == "STILL"
+                    color: player.state == "STILL" && game.phase == "gameplay"
                         ? Colors.lightBlue
                         : Colors.grey),
                 iconSize: 200.0,
