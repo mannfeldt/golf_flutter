@@ -29,7 +29,7 @@ class Utility {
   static String getScoreName(int strokes, int par) {
     if (strokes == 1) return 'Hole in one!';
     int score = strokes - par;
-    var term = SCORE_TERMS.singleWhere((term) => term["score"] == score,
+    var term = SCORE_TERMS.singleWhere((t) => t["score"] == score,
         orElse: () => null);
     if (term != null) return term["name"];
     return score.toString() + " over par";

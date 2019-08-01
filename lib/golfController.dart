@@ -23,7 +23,6 @@ class _GolfController extends State<GolfController> {
 
   @override
   Widget build(BuildContext context) {
-    TextEditingController controller = TextEditingController();
     final gameState = Provider.of<GameState>(context);
 
     //här ska vi ha två olika widgetar. en som är en ruta för att välja namn och som då skapar en player och kallar på gamestate.createPlayer()
@@ -87,7 +86,8 @@ class _GolfController extends State<GolfController> {
     } else if (progress > 0.5) {
       progressColor = Colors.amber;
     }
-//kan dela upp alla delar i flera egna widgets...
+    //2. Bygg apk...
+//1. kan dela upp alla delar i flera egna widgets...
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
